@@ -4,10 +4,11 @@ export type TicketAnalysis = {
   breakdown_required: boolean;
 };
 
-export type SubTicket = {
+export interface SubTicket {
   title: string;
   estimated_effort: number;
-};
+  is_copied?: boolean;
+}
 
 export interface PopupState {
   issueContent: string;

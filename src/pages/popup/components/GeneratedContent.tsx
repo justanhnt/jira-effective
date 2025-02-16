@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TicketAnalysis, SubTicket } from '../types';
 
 interface GeneratedContentProps {
@@ -12,22 +12,54 @@ interface GeneratedContentProps {
   onCopy: (content: string) => void;
 }
 
-const SubTicketItem = ({ ticket, onCopy }: { ticket: SubTicket; onCopy: (content: string) => void }) => (
-  <div className="flex flex-col gap-2 p-3 bg-white rounded-lg shadow-sm">
-    <div className="flex justify-between items-start">
-      <span className="font-medium text-gray-800">{ticket.title}</span>
-      <button
-        onClick={() => onCopy(ticket.title)}
-        className="ml-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-      >
-        Copy
-      </button>
+const SubTicketItem = ({ 
+  ticket, 
+  onCopy, 
+  onCopied 
+}: { 
+  ticket: SubTicket; 
+  onCopy: (content: string) => void;
+  onCopied: () => void;
+}) => {
+  const [isRecentlyCopied, setIsRecentlyCopied] = useState(false);
+
+  const handleCopy = () => {
+    onCopy(ticket.title);
+    onCopied();
+    setIsRecentlyCopied(true);
+    setTimeout(() => setIsRecentlyCopied(false), 2000);
+  };
+
+  return (
+    <div className={`flex flex-col gap-2 p-3 bg-white rounded-lg shadow-sm ${ticket.is_copied ? 'opacity-60' : ''}`}>
+      <div className="flex justify-between items-start">
+        <span className="font-medium text-gray-800">{ticket.title}</span>
+        <button
+          onClick={handleCopy}
+          className={`ml-2 px-4 py-1 rounded transition-colors flex items-center gap-1
+            ${isRecentlyCopied 
+              ? 'bg-green-500 hover:bg-green-600' 
+              : 'bg-blue-500 hover:bg-blue-600'} 
+            text-white`}
+        >
+          {isRecentlyCopied ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Copied!</span>
+            </>
+          ) : (
+            'Copy'
+          )}
+        </button>
+      </div>
+      <div className="text-sm text-blue-500">
+        {ticket.estimated_effort} points
+      </div>
     </div>
-    <div className="text-sm text-blue-500">
-      {ticket.estimated_effort} points
-    </div>
-  </div>
-);
+  );
+};
 
 export const GeneratedContent: React.FC<GeneratedContentProps> = ({
   generatedDescription,
@@ -37,6 +69,8 @@ export const GeneratedContent: React.FC<GeneratedContentProps> = ({
   onCopyDescription,
   onCopy,
 }) => {
+  const [copiedTickets, setCopiedTickets] = useState<Set<string>>(new Set());
+
   if (!generatedDescription && !subTickets) return null;
 
   return (
@@ -90,7 +124,17 @@ export const GeneratedContent: React.FC<GeneratedContentProps> = ({
           <h3 className="text-lg font-semibold mb-3 text-gray-800">Sub-Issues</h3>
           <ul className="space-y-3">
             {subTickets.map((ticket, index) => (
-              <SubTicketItem key={index} ticket={ticket} onCopy={onCopy} />
+              <SubTicketItem 
+                key={index} 
+                ticket={{
+                  ...ticket,
+                  is_copied: copiedTickets.has(ticket.title)
+                }}
+                onCopy={onCopy}
+                onCopied={() => {
+                  setCopiedTickets((prev: Set<string>) => new Set([...prev, ticket.title]));
+                }}
+              />
             ))}
           </ul>
         </div>

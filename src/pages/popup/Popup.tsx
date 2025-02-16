@@ -231,7 +231,7 @@ const Popup = () => {
   };
 
   return (
-    <div className="ticket-assistant p-4 max-w-2xl mx-auto bg-gray-50 min-h-screen">
+    <div className="ticket-assistant p-4 max-w-4xl mx-auto bg-gray-50 min-h-[800px]">
       <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-gray-800">Ticket Assistant</h1>
         <div className="flex gap-2">
