@@ -12,6 +12,23 @@ interface GeneratedContentProps {
   onCopy: (content: string) => void;
 }
 
+const SubTicketItem = ({ ticket, onCopy }: { ticket: SubTicket; onCopy: (content: string) => void }) => (
+  <div className="flex flex-col gap-2 p-3 bg-white rounded-lg shadow-sm">
+    <div className="flex justify-between items-start">
+      <span className="font-medium text-gray-800">{ticket.title}</span>
+      <button
+        onClick={() => onCopy(ticket.title)}
+        className="ml-2 px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      >
+        Copy
+      </button>
+    </div>
+    <div className="text-sm text-blue-500">
+      {ticket.estimated_effort} points
+    </div>
+  </div>
+);
+
 export const GeneratedContent: React.FC<GeneratedContentProps> = ({
   generatedDescription,
   analysis,
@@ -73,20 +90,7 @@ export const GeneratedContent: React.FC<GeneratedContentProps> = ({
           <h3 className="text-lg font-semibold mb-3 text-gray-800">Sub-Issues</h3>
           <ul className="space-y-3">
             {subTickets.map((ticket, index) => (
-              <li key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium text-gray-800">{ticket.title}</span>
-                  <span className="ml-2 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                    {ticket.estimated_effort} points
-                  </span>
-                </div>
-                <button
-                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  onClick={() => onCopy(ticket.title)}
-                >
-                  Copy
-                </button>
-              </li>
+              <SubTicketItem key={index} ticket={ticket} onCopy={onCopy} />
             ))}
           </ul>
         </div>

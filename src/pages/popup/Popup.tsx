@@ -93,7 +93,7 @@ const Popup = () => {
   };
 
   const handleCreateSubIssue = async () => {
-    setLoadingStates(prev => ({ ...prev, analyze: true }));
+    setLoadingStates(prev => ({ ...prev, subIssue: true }));
     setError(null);
     try {
       const result = await createSubIssue(issueTitle, issueContent);
@@ -109,6 +109,7 @@ const Popup = () => {
       console.error('Error:', error);
       setError('Failed to create sub-issues. Please check your API key and try again.');
     } finally {
+      setLoadingStates(prev => ({ ...prev, subIssue: false }));
     }
   }
 
