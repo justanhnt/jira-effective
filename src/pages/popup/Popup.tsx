@@ -133,6 +133,10 @@ const Popup = () => {
     setError(null);
     setLoadingStates(prev => ({ ...prev, loadJira: true }));
     try {
+      // Clear existing state first
+      setGeneratedDescription('');
+      setAnalysis(null);
+
       // Query the active tab to execute content script
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab.id) throw new Error('No active tab found');

@@ -38,6 +38,9 @@ export const analyzeIssue = async (issueTitle: string, issueContent: string) => 
         {
           role: "system",
           content: `You are a helpful JIRA project management assistant that helps analyze tickets. Your response should be in JSON format 
+          The Description should be rich enough to understand the issue and in MD format.
+          The estimated_effort should be in story points (1,2,3,5,8,13)
+          The breakdown_required should be true if the estimated_effort is above 8 points
         {
           description: string;
           estimated_effort: number;
@@ -48,9 +51,6 @@ export const analyzeIssue = async (issueTitle: string, issueContent: string) => 
         {
           role: "user",
           content: `Analyze this ticket and provide: 
-            A clear description
-            Estimated effort (in story points: 1,2,3,5,8,13)
-            Whether it should be broken down (if estimated above 8 points)
             Issue Title: ${issueTitle}
             Issue Content: ${issueContent}`
         }
