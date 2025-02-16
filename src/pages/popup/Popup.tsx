@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeIssue } from '../../services/openai';
+import { analyzeIssue, createSubIssue } from '../../services/openai';
 import { loadSettings, saveSettings } from '../../config/settings';
 import { Settings } from '../../config/types';
 
@@ -10,6 +10,11 @@ type TicketAnalysis = {
   breakdown_required: boolean;
 };
 
+type SubTicket = {
+  title: string;
+  estimated_effort: number;
+};
+
 // Add interface for popup state
 interface PopupState {
   issueContent: string;
@@ -17,12 +22,14 @@ interface PopupState {
   issueTitle: string;
   generatedDescription: string;
   analysis: TicketAnalysis | null;
+  subTickets: SubTicket[] | null;
 }
 
 const Popup = () => {
   const [issueContent, setIssueContent] = useState('');
   const [loadingStates, setLoadingStates] = useState({
     analyze: false,
+    subIssue: false,
     apply: false,
     loadJira: false
   });
@@ -42,6 +49,7 @@ const Popup = () => {
   const [issueTitle, setIssueTitle] = useState('');
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [analysis, setAnalysis] = useState<TicketAnalysis | null>(null);
+  const [subTickets, setSubTickets] = useState<SubTicket[] | null>(null);
 
   useEffect(() => {
     // Load both settings and popup state when component mounts
@@ -58,6 +66,7 @@ const Popup = () => {
         setIssueTitle(popupState.issueTitle || '');
         setGeneratedDescription(popupState.generatedDescription || '');
         setAnalysis(popupState.analysis);
+        setSubTickets(popupState.subTickets);
       }
     });
   }, []);
@@ -69,11 +78,12 @@ const Popup = () => {
       issueKey,
       issueTitle,
       generatedDescription,
-      analysis
+      analysis,
+      subTickets
     };
     
     chrome.storage.local.set({ popupState });
-  }, [issueContent, issueKey, issueTitle, generatedDescription, analysis]);
+  }, [issueContent, issueKey, issueTitle, generatedDescription, analysis, subTickets]);
 
   const handleAnalyzeIssue = async () => {
     setLoadingStates(prev => ({ ...prev, analyze: true }));
@@ -96,6 +106,26 @@ const Popup = () => {
       setLoadingStates(prev => ({ ...prev, analyze: false }));
     }
   };
+
+  const handleCreateSubIssue = async () => {
+    setLoadingStates(prev => ({ ...prev, analyze: true }));
+    setError(null);
+    try {
+      const result = await createSubIssue(issueTitle, issueContent);
+      if (typeof result === 'string') {
+        try {
+          const parsedResult = JSON.parse(result)["sub_tickets"] as SubTicket[];
+          setSubTickets(parsedResult);
+        } catch {
+          setError('Failed to parse sub-issue response');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setError('Failed to create sub-issues. Please check your API key and try again.');
+    } finally {
+    }
+  }
 
   const handleSaveSetings = async () => {
     try {
@@ -160,16 +190,25 @@ const Popup = () => {
     }
   };
 
-  const handleCopyDescription = async () => {
+  const handleCopy = async (content: string) => {
     setLoadingStates(prev => ({ ...prev, apply: true }));
     setError(null);
     setSuccess(null);
     try {
-      await navigator.clipboard.writeText(generatedDescription)
+      await navigator.clipboard.writeText(content);
     } catch (error) {
-      console.error('Error copying description:', error);
-      setError('Failed to copy description to clipboard');
+      console.error('Error copying content:', error);
+      setError('Failed to copy content to clipboard');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, apply: false }));
     }
+  };
+
+  const handleCopyDescription = async () => {
+    setLoadingStates(prev => ({ ...prev, apply: true }));
+    setError(null);
+    setSuccess(null);
+    await handleCopy(generatedDescription);
 
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -200,6 +239,7 @@ const Popup = () => {
     setIssueTitle('');
     setGeneratedDescription('');
     setAnalysis(null);
+    setSubTickets(null);
     await chrome.storage.local.remove('popupState');
   };
 
@@ -381,13 +421,23 @@ const Popup = () => {
             </div>
           </div>
 
-          <button 
-            className="analyze-button w-full"
-            onClick={handleAnalyzeIssue}
-            disabled={loadingStates.analyze || !issueTitle}
-          >
-            {loadingStates.analyze ? 'Analyzing...' : 'Generate Description'}
-          </button>
+          <div className="flex gap-2">
+            <button 
+              className="analyze-button flex-1"
+              onClick={() => handleAnalyzeIssue()}
+              disabled={loadingStates.analyze || !issueTitle}
+            >
+              {loadingStates.analyze ? 'Analyzing...' : 'Generate Description'}
+            </button>
+            
+            <button 
+              className="analyze-button flex-1"
+              onClick={() => handleCreateSubIssue()}
+              disabled={loadingStates.subIssue || !issueTitle}
+            >
+              {loadingStates.subIssue ? 'Analyzing...' : 'Create Sub-Issues'}
+            </button>
+          </div>
 
           {generatedDescription && (
             <div className="mt-4 space-y-4">
@@ -428,6 +478,26 @@ const Popup = () => {
                   {loadingStates.apply ? 'Processing...' : 'Copy & Open Editor'}
                 </button>
               </div>
+            </div>
+          )}
+
+          {subTickets && (
+            <div className="mt-4 space-y-4">
+              <h3 className="font-semibold mb-2">Sub-Issues:</h3>
+              <ul className="list-disc pl-5">
+                {subTickets.map((ticket, index) => (
+                  <li key={index}>
+                    <span className="font-medium">{ticket.title}</span>
+                    <span className="text-gray-500"> ({ticket.estimated_effort} points)</span>
+                    <button
+                      className="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600"
+                      onClick={() => handleCopy(ticket.title)}
+                    >
+                      Copy
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </>

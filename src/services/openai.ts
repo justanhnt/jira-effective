@@ -64,3 +64,40 @@ export const analyzeIssue = async (issueTitle: string, issueContent: string) => 
     throw error;
   }
 }; 
+
+export const createSubIssue = async (issueTitle: string, issueContent: string) => {
+  try {
+    const openai = await getOpenAIInstance();
+    const settings = await loadSettings();
+
+    const response = await openai.chat.completions.create({
+      model: settings.gptModel || "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful JIRA project management assistant that helps create sub-issues. Your response should be in JSON format 
+          sub_tickets: [
+            {
+              title: string;
+              estimated_effort: number;
+            }
+          ]
+          }`
+        },
+        {
+          role: "user",
+          content: `Analyze this ticket and provide: 
+            Issue Title: ${issueTitle}
+            Issue Content: ${issueContent}`
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    return response.choices[0]?.message?.content;
+  } catch (error) {
+    console.error('Error creating sub-issues:', error);
+    throw error;
+  }
+};
+
