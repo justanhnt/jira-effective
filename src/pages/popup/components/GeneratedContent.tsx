@@ -10,6 +10,7 @@ interface GeneratedContentProps {
   };
   onCopyDescription: () => void;
   onCopy: (content: string) => void;
+  onSubTicketCopied: (ticketTitle: string) => void;
 }
 
 const SubTicketItem = ({ 
@@ -68,9 +69,8 @@ export const GeneratedContent: React.FC<GeneratedContentProps> = ({
   loadingStates,
   onCopyDescription,
   onCopy,
+  onSubTicketCopied,
 }) => {
-  const [copiedTickets, setCopiedTickets] = useState<Set<string>>(new Set());
-
   if (!generatedDescription && !subTickets) return null;
 
   return (
@@ -126,14 +126,9 @@ export const GeneratedContent: React.FC<GeneratedContentProps> = ({
             {subTickets.map((ticket, index) => (
               <SubTicketItem 
                 key={index} 
-                ticket={{
-                  ...ticket,
-                  is_copied: copiedTickets.has(ticket.title)
-                }}
+                ticket={ticket}
                 onCopy={onCopy}
-                onCopied={() => {
-                  setCopiedTickets((prev: Set<string>) => new Set([...prev, ticket.title]));
-                }}
+                onCopied={() => onSubTicketCopied(ticket.title)}
               />
             ))}
           </ul>

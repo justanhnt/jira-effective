@@ -230,6 +230,18 @@ const Popup = () => {
     await chrome.storage.local.remove('popupState');
   };
 
+  const handleSubTicketCopied = (ticketTitle: string) => {
+    if (!subTickets) return;
+    
+    const updatedSubTickets = subTickets.map(ticket => 
+      ticket.title === ticketTitle 
+        ? { ...ticket, is_copied: true }
+        : ticket
+    );
+    
+    setSubTickets(updatedSubTickets);
+  };
+
   return (
     <div className="ticket-assistant p-4 max-w-4xl mx-auto bg-gray-50 min-h-[800px]">
       <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
@@ -299,6 +311,7 @@ const Popup = () => {
             loadingStates={loadingStates}
             onCopyDescription={handleCopyDescription}
             onCopy={handleCopy}
+            onSubTicketCopied={handleSubTicketCopied}
           />
         </>
       )}
